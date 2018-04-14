@@ -1,26 +1,32 @@
-import re, requests, json
+import re, requests, json, sys
 from docx import Document
 from subprocess import call
 
-# file handle fh
-#fh = open('gitcommits_test.txt')
-fh = call(["git","log","--pretty=format:'%cd %s'"])
+# Settings
+u = ''
 p = open('p.txt')
 p = p.readline()
-url = 'https://jira.brandleadership.ch/rest/api/latest/issue/'
+host = ''
+location = sys.argv
+
+# file handle fh
+#fh = open('gitcommits_test.txt')
+input = call(["git","log",location,"--pretty=format:'%cd %s'"])
+endpoint = '/rest/api/latest/issue/'
+url = host + endpoint
 document = Document()
 i = 0
 
 while True:
-    # read line
-    line = fh.readline()
-    # Search for Jira Issue
+    # Read line
+    line = input.readline()
+    # Parse for Jira Issue
     number = re.search('[a-zA-Z]+-\d+',line)
     if number:
         target = url + number.group()
-        response = requests.get(target, auth=('m-ammann', p)).json()
+        response = requests.get(target, auth=(u,p)).json()
         
-        #Add to Word
+        #Add to Word pages
         document.add_heading(response["fields"]["summary"], 0)
         document.add_heading('Datum', level=1)
         document.add_paragraph(response["fields"]["created"])
@@ -38,4 +44,6 @@ while True:
     if not line:
         break
 fh.close()
-document.save('demo.docx')
+
+# Save Word with Jira Issues
+document.save('output.docx')
