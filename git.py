@@ -1,49 +1,43 @@
-import re, requests, json, sys
+import re, requests, json, sys, subprocess
 from docx import Document
-from subprocess import call
 
 # Settings
-u = ''
+u = 'm-ammann'
 p = open('p.txt')
 p = p.readline()
-host = ''
-location = sys.argv
+host = 'https://jira.brandleadership.ch'
+location = sys.argv[1]
 
 # file handle fh
-#fh = open('gitcommits_test.txt')
-input = call(["git","log",location,"--pretty=format:'%cd %s'"])
+#input = open('gitcommits_test.txt')
+input = subprocess.check_output(["git","--git-dir="+str(location)+".git","log","--pretty=format:'%cd %s'"])
 endpoint = '/rest/api/latest/issue/'
 url = host + endpoint
 document = Document()
-i = 0
 
-while True:
+for line in input.splitlines():
     # Read line
-    line = input.readline()
+    line = str(line.strip())
     # Parse for Jira Issue
     number = re.search('[a-zA-Z]+-\d+',line)
     if number:
         target = url + number.group()
-        response = requests.get(target, auth=(u,p)).json()
-        
-        #Add to Word pages
-        document.add_heading(response["fields"]["summary"], 0)
-        document.add_heading('Datum', level=1)
-        document.add_paragraph(response["fields"]["created"])
-        document.add_heading("Jira Nummer", level=1)
-        document.add_paragraph(number.group())
-        document.add_heading('Beschreibung', level=1)
-        document.add_paragraph(response["fields"]["description"])
-        document.add_page_break()
-    
-    i += i
+        response = requests.get(target, auth=(u,p))
 
-    if i == 5:
-        break
-    # check if line is not empty
-    if not line:
-        break
-fh.close()
+        if response.status_code == requests.codes.ok:
+            print(number.group())
+            response = response.json()
+            #Add to Word pages
+            document.add_heading(response["fields"]["summary"], 0)
+            document.add_heading('Datum', level=1)
+            document.add_paragraph(response["fields"]["created"])
+            document.add_heading("Jira Nummer", level=1)
+            document.add_paragraph(number.group())
+            document.add_heading('Beschreibung', level=1)
+            document.add_paragraph(response["fields"]["description"])
+            document.add_page_break()
+        else:
+            print(response)
 
 # Save Word with Jira Issues
 document.save('output.docx')
