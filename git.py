@@ -6,13 +6,16 @@ u = 'm-ammann'
 p = open('p.txt')
 p = p.readline()
 host = 'https://jira.brandleadership.ch'
+
+# CL Parameter
 location = sys.argv[1]
 
-# file handle fh
-#input = open('gitcommits_test.txt')
+# git handle
 input = subprocess.check_output(["git","--git-dir="+str(location)+".git","log","--pretty=format:'%cd %s'"])
 endpoint = '/rest/api/latest/issue/'
 url = host + endpoint
+
+# Creating Document
 document = Document()
 
 for line in input.splitlines():
@@ -37,7 +40,7 @@ for line in input.splitlines():
             document.add_paragraph(response["fields"]["description"])
             document.add_page_break()
         else:
-            print(response)
+            print(number.group())
 
 # Save Word with Jira Issues
 document.save('output.docx')
